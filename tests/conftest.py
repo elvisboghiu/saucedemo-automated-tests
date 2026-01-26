@@ -2,7 +2,7 @@
 Pytest configuration and fixtures for Playwright tests.
 """
 import pytest
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 from utils.config import STANDARD_USER, STANDARD_PASSWORD
 from pages.login_page import LoginPage
 from pages.inventory_page import InventoryPage
@@ -34,6 +34,11 @@ def logged_in_page(login_page: LoginPage) -> Page:
     Use this fixture when your test needs to start from the inventory page.
     """
     login_page.login(STANDARD_USER, STANDARD_PASSWORD)
+    # Wait for navigation to inventory page
+    expect(login_page.page).to_have_url("https://www.saucedemo.com/inventory.html")
+    # Wait for inventory page to be fully loaded
+    inventory_page = InventoryPage(login_page.page)
+    inventory_page.is_loaded()
     return login_page.page
 
 

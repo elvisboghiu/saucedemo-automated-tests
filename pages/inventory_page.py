@@ -62,7 +62,9 @@ class InventoryPage:
             Number of items in cart, 0 if badge is not visible
         """
         cart_badge = self.page.locator('.shopping_cart_badge')
-        if cart_badge.is_visible():
+        if cart_badge.count() == 0:
+            return 0
+        if cart_badge.is_visible(timeout=0):
             return int(cart_badge.inner_text())
         return 0
     
@@ -92,4 +94,5 @@ class InventoryPage:
     def logout(self) -> None:
         """Logout from the application."""
         self.menu_button.click()
+        self.logout_link.wait_for(state="visible")
         self.logout_link.click()

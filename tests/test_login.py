@@ -26,8 +26,9 @@ class TestLogin:
     
     def test_invalid_username(self, login_page: LoginPage):
         """Test login with invalid username."""
-        invalid_username, password = get_user_credentials("invalid")
-        login_page.login(invalid_username, password)
+        invalid_username, _ = get_user_credentials("invalid")
+        # Use a valid password to isolate invalid username behavior
+        login_page.login(invalid_username, STANDARD_PASSWORD)
         
         # Verify error message is displayed
         error_message = login_page.get_error_message()

@@ -71,6 +71,7 @@ class TestCart:
         assert cart_page.is_loaded(), "Cart page should be loaded"
         
         # Verify item is in cart
+        expect(cart_page.cart_items).to_have_count(1)
         items = cart_page.get_items()
         assert len(items) == 1, "Cart should have one item"
         assert items[0]["name"] == item_name, f"Cart should contain {item_name}"
@@ -93,6 +94,7 @@ class TestCart:
         # Navigate to cart
         inventory_page.open_cart()
         cart_page = CartPage(inventory_page.page)
+        expect(cart_page.cart_items).to_have_count(1)
         assert len(cart_page.get_items()) == 1, "Item should be in cart"
         
         # Go back to inventory
@@ -138,6 +140,7 @@ class TestCart:
         inventory_page.open_cart()
         
         cart_page = CartPage(inventory_page.page)
+        expect(cart_page.cart_items).to_have_count(1)
         items = cart_page.get_items()
         
         # Verify item details

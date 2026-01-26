@@ -35,6 +35,11 @@ class CartPage:
         Returns:
             List of dictionaries containing item information
         """
+        # Wait for cart items to be visible before reading them
+        # This ensures items are fully rendered before we try to read their content
+        if self.cart_items.count() > 0:
+            self.cart_items.first.wait_for(state="visible")
+        
         items = []
         for item in self.cart_items.all():
             name = item.locator('.inventory_item_name').inner_text()
