@@ -224,6 +224,71 @@ The project includes a GitHub Actions workflow (`.github/workflows/tests.yml`) t
 6. **Error Handling**: Comprehensive error messages and assertions
 7. **Documentation**: Clear docstrings and README
 
+## Design Decisions
+
+- **Playwright + pytest**:
+  - Playwright provides modern, reliable browser automation with built-in auto-waiting and powerful debugging tools.
+  - pytest offers a simple, expressive test syntax and rich plugin ecosystem (fixtures, markers, HTML reports).
+- **Page Object Model (POM)**:
+  - Pages encapsulate selectors and actions so tests focus on business flows.
+  - Mapping:
+    - `LoginPage` → `tests/test_login.py`
+    - `InventoryPage` → `tests/test_cart.py`, `tests/test_checkout.py`
+    - `CartPage` → `tests/test_cart.py`, `tests/test_checkout.py`
+    - `CheckoutPage` → `tests/test_checkout.py`
+- **Suite layering via markers**:
+  - `@pytest.mark.login` for authentication coverage.
+  - `@pytest.mark.cart` for cart and inventory/cart interactions.
+  - `@pytest.mark.checkout` for checkout flows.
+  - A subset of high-value end-to-end tests can be additionally marked as `smoke` for faster CI runs.
+
+## Flakiness Strategy
+
+- Rely on **Playwright auto-waiting** instead of arbitrary sleeps.
+- Use explicit readiness checks such as:
+  - `InventoryPage.is_loaded()` after login or refresh.
+  - `CartPage.is_loaded()` after navigating to the cart.
+  - `CheckoutPage.is_step_one_loaded()` and `CheckoutPage.is_overview_loaded()` around checkout transitions.
+- For absence checks (e.g., empty cart badge), use low/zero timeouts so tests fail fast instead of waiting for the full default timeout.
+- Keep tests **stateless and isolated** by using fresh pages/contexts via pytest fixtures.
+
+## Navigation & Edge Coverage
+
+Navigation-related scenarios covered by the suite include:
+
+- Direct navigation to `inventory.html` without login redirects back to the login page.
+- After logout, attempts to access `inventory.html` are redirected to login.
+- Cart state persists across:
+  - Navigation between inventory and cart.
+  - Refreshing the cart page.
+  - Refreshing the inventory page (cart badge count preserved).
+- Checkout back/forward behavior:
+  - From checkout step two, using browser Back returns to step one with data still filled.
+  - Using browser Forward returns to step two with overview still loaded.
+- Logged-in users can open `inventory.html` in a **new tab** and remain authenticated.
+
+## Debugging Failures
+
+Useful commands during local debugging:
+
+- Run tests in headed mode:
+  ```bash
+  pytest --headed
+  ```
+- Slow down interactions for visual inspection:
+  ```bash
+  pytest --headed --slowmo 200
+  ```
+- Run a specific test with verbose output:
+  ```bash
+  pytest -v tests/test_checkout.py::TestCheckout::test_complete_checkout_flow
+  ```
+
+Artifacts:
+
+- **Screenshots / videos**: Saved under `test-results/` when tests fail (configured via pytest/Playwright options).
+- **HTML report**: Generated as `reports/report.html` after pytest runs.
+
 ## Troubleshooting
 
 ### Common Issues

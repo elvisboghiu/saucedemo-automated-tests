@@ -16,6 +16,69 @@ BASE_URL_NO_SLASH = BASE_URL.rstrip("/")
 class TestCart:
     """Test cases for shopping cart functionality."""
     
+    def test_cart_state_after_inventory_refresh(self, inventory_page: InventoryPage):
+        """Cart badge should keep correct count after refreshing inventory page."""
+        test_data = load_test_data()
+        item1 = test_data["products"]["backpack"]
+        item2 = test_data["products"]["bike_light"]
+
+        inventory_page.add_item_to_cart(item1)
+        inventory_page.add_item_to_cart(item2)
+        assert inventory_page.get_cart_count() == 2, "Cart badge should show 2 items"
+
+        # Refresh inventory and verify cart state is preserved
+        inventory_page.page.reload()
+        assert inventory_page.is_loaded(), "Inventory page should be loaded after refresh"
+        assert inventory_page.get_cart_count() == 2, "Cart badge should still show 2 items after refresh"
+
+    def test_inventory_loads_with_all_products(self, inventory_page: InventoryPage):
+        """Inventory page should load all expected products."""
+        assert inventory_page.is_loaded(), "Inventory page should be loaded"
+        products = inventory_page.get_products()
+        # Swag Labs has 6 products by default
+        assert len(products) == 6, f"Expected 6 products, got {len(products)}"
+        for product in products:
+            assert product["name"], "Product name should not be empty"
+            assert product["description"], "Product description should not be empty"
+            assert "$" in product["price"], "Product price should contain currency symbol"
+
+    def test_inventory_sorting_by_name_and_price(self, inventory_page: InventoryPage):
+        """Verify inventory sorting options for name and price."""
+        # Sort by Name (A→Z)
+        inventory_page.sort_by("az")
+        names_az = inventory_page.get_product_names()
+        assert names_az == sorted(names_az), "Products should be sorted A→Z by name"
+
+        # Sort by Name (Z→A)
+        inventory_page.sort_by("za")
+        names_za = inventory_page.get_product_names()
+        assert names_za == sorted(names_za, reverse=True), "Products should be sorted Z→A by name"
+
+        # Sort by Price (low→high)
+        inventory_page.sort_by("lohi")
+        prices_lohi = inventory_page.get_product_prices()
+        assert prices_lohi == sorted(prices_lohi), "Products should be sorted low→high by price"
+
+        # Sort by Price (high→low)
+        inventory_page.sort_by("hilo")
+        prices_hilo = inventory_page.get_product_prices()
+        assert prices_hilo == sorted(prices_hilo, reverse=True), "Products should be sorted high→low by price"
+
+    def test_cart_persists_after_page_refresh(self, inventory_page: InventoryPage):
+        """Cart contents should persist after refreshing the cart page."""
+        test_data = load_test_data()
+        item_name = test_data["products"]["backpack"]
+
+        inventory_page.add_item_to_cart(item_name)
+        inventory_page.open_cart()
+        cart_page = CartPage(inventory_page.page)
+        expect(cart_page.cart_items).to_have_count(1)
+
+        # Refresh the page and verify the item is still in the cart
+        inventory_page.page.reload()
+        cart_page = CartPage(inventory_page.page)
+        expect(cart_page.cart_items).to_have_count(1)
+
     def test_add_single_item_to_cart(self, inventory_page: InventoryPage):
         """Test adding a single item to cart."""
         test_data = load_test_data()
@@ -168,3 +231,14 @@ class TestCart:
         
         # Verify navigation to checkout page
         expect(inventory_page.page).to_have_url(f"{BASE_URL_NO_SLASH}/checkout-step-one.html")
+
+    def test_inventory_access_in_new_tab_after_login(self, inventory_page: InventoryPage):
+        """Inventory should be accessible in a new tab after login."""
+        page = inventory_page.page
+        context = page.context
+
+        new_page = context.new_page()
+        new_page.goto(f"{BASE_URL_NO_SLASH}/inventory.html")
+
+        new_inventory_page = InventoryPage(new_page)
+        assert new_inventory_page.is_loaded(), "Inventory should load in new tab for logged-in user"
