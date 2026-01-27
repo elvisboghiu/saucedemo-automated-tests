@@ -6,8 +6,10 @@ import pytest
 from playwright.sync_api import Page, expect
 from pages.login_page import LoginPage
 from pages.inventory_page import InventoryPage
-from utils.config import STANDARD_USER, STANDARD_PASSWORD, LOCKED_OUT_USER
+from utils.config import BASE_URL, STANDARD_USER, STANDARD_PASSWORD, LOCKED_OUT_USER
 from utils.helpers import get_user_credentials
+
+BASE_URL_NO_SLASH = BASE_URL.rstrip("/")
 
 
 @pytest.mark.login
@@ -21,7 +23,7 @@ class TestLogin:
         
         # Verify redirect to inventory page
         inventory_page = InventoryPage(login_page.page)
-        expect(login_page.page).to_have_url("https://www.saucedemo.com/inventory.html")
+        expect(login_page.page).to_have_url(f"{BASE_URL_NO_SLASH}/inventory.html")
         assert inventory_page.is_loaded(), "Inventory page should be loaded after successful login"
     
     def test_invalid_username(self, login_page: LoginPage):

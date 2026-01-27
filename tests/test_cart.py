@@ -6,7 +6,10 @@ import pytest
 from playwright.sync_api import expect
 from pages.inventory_page import InventoryPage
 from pages.cart_page import CartPage
+from utils.config import BASE_URL
 from utils.helpers import load_test_data
+
+BASE_URL_NO_SLASH = BASE_URL.rstrip("/")
 
 
 @pytest.mark.cart
@@ -164,4 +167,4 @@ class TestCart:
         cart_page.proceed_to_checkout()
         
         # Verify navigation to checkout page
-        expect(inventory_page.page).to_have_url("https://www.saucedemo.com/checkout-step-one.html")
+        expect(inventory_page.page).to_have_url(f"{BASE_URL_NO_SLASH}/checkout-step-one.html")

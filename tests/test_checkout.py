@@ -7,7 +7,10 @@ from playwright.sync_api import expect
 from pages.inventory_page import InventoryPage
 from pages.cart_page import CartPage
 from pages.checkout_page import CheckoutPage
+from utils.config import BASE_URL
 from utils.helpers import load_test_data
+
+BASE_URL_NO_SLASH = BASE_URL.rstrip("/")
 
 
 @pytest.mark.checkout
@@ -40,13 +43,13 @@ class TestCheckout:
         checkout_page.continue_to_overview()
         
         # Verify overview page
-        expect(inventory_page.page).to_have_url("https://www.saucedemo.com/checkout-step-two.html")
+        expect(inventory_page.page).to_have_url(f"{BASE_URL_NO_SLASH}/checkout-step-two.html")
         
         # Complete order
         checkout_page.finish_order()
         
         # Verify order completion
-        expect(inventory_page.page).to_have_url("https://www.saucedemo.com/checkout-complete.html")
+        expect(inventory_page.page).to_have_url(f"{BASE_URL_NO_SLASH}/checkout-complete.html")
         assert checkout_page.is_checkout_complete(), "Checkout should be complete"
         
         confirmation_message = checkout_page.get_confirmation_message()
@@ -85,7 +88,7 @@ class TestCheckout:
                f"Expected error for missing first name. Got: {error_message}"
         
         # Verify still on checkout page
-        expect(inventory_page.page).to_have_url("https://www.saucedemo.com/checkout-step-one.html")
+        expect(inventory_page.page).to_have_url(f"{BASE_URL_NO_SLASH}/checkout-step-one.html")
     
     def test_checkout_missing_last_name(self, inventory_page: InventoryPage):
         """Test checkout form validation - missing last name."""
@@ -154,7 +157,7 @@ class TestCheckout:
         checkout_page.cancel_checkout()
         
         # Verify return to cart
-        expect(inventory_page.page).to_have_url("https://www.saucedemo.com/cart.html")
+        expect(inventory_page.page).to_have_url(f"{BASE_URL_NO_SLASH}/cart.html")
         cart_page = CartPage(inventory_page.page)
         assert cart_page.is_loaded(), "Should be back on cart page"
     
@@ -184,7 +187,7 @@ class TestCheckout:
         inventory_page.logout()
         
         # Verify redirect to login page
-        expect(inventory_page.page).to_have_url("https://www.saucedemo.com/")
+        expect(inventory_page.page).to_have_url(f"{BASE_URL_NO_SLASH}/")
     
     def test_checkout_with_multiple_items(self, inventory_page: InventoryPage):
         """Test checkout process with multiple items in cart."""
