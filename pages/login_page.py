@@ -20,6 +20,9 @@ class LoginPage:
         self.password_input = page.get_by_placeholder("Password")
         self.login_button = page.get_by_role("button", name="Login")
         self.error_message = page.locator('[data-test="error"]')
+        # Error UI elements
+        self.error_icon = page.locator(".error_icon")
+        self.error_close_button = page.locator('[data-test="error-button"]')
     
     def goto(self) -> None:
         """Navigate to the login page."""
@@ -47,6 +50,24 @@ class LoginPage:
         if self.error_message.is_visible():
             return self.error_message.inner_text()
         return ""
+
+    def dismiss_error(self) -> None:
+        """
+        Dismiss the error message using the close (X) button if visible.
+        """
+        if self.error_close_button.is_visible():
+            self.error_close_button.click()
+
+    def has_error_icon(self) -> bool:
+        """
+        Check whether the error icon is visible next to the form fields.
+
+        Returns:
+            True if the error icon is visible, False otherwise.
+        """
+        if self.error_icon.count() == 0:
+            return False
+        return self.error_icon.first.is_visible()
     
     def is_loaded(self) -> bool:
         """

@@ -94,3 +94,42 @@ class TestLogin:
         assert login_page.password_input.is_visible(), "Password input should be visible"
         assert login_page.login_button.is_visible(), "Login button should be visible"
         assert login_page.is_loaded(), "Login page should be loaded"
+
+    def test_error_icon_and_message_for_invalid_login(self, login_page: LoginPage):
+        """Error icon and message should appear for invalid login."""
+        login_page.login("invalid_user", "wrong_password")
+        error_message = login_page.get_error_message()
+        assert error_message, "Error message should be displayed for invalid login"
+        assert login_page.has_error_icon(), "Error icon should be visible for invalid login"
+
+    def test_error_message_can_be_dismissed(self, login_page: LoginPage):
+        """User can dismiss the error message using the close (X) button."""
+        login_page.login("invalid_user", "wrong_password")
+        # Ensure error is visible first
+        assert login_page.get_error_message(), "Error should be shown before dismissing"
+        login_page.dismiss_error()
+        # After dismiss, error container should no longer be visible
+        assert login_page.get_error_message() == "", "Error message should be dismissed"
+
+    def test_cannot_access_inventory_without_login(self, page: Page):
+        """Direct navigation to inventory without login should redirect to login page."""
+        page.goto(f"{BASE_URL_NO_SLASH}/inventory.html")
+        expect(page).to_have_url(f"{BASE_URL_NO_SLASH}/")
+
+    def test_cannot_access_inventory_after_logout(self, login_page: LoginPage):
+        """
+        After logout, navigating directly to inventory should redirect
+        back to the login page (session cleared).
+        """
+        # Login and land on inventory
+        login_page.login(STANDARD_USER, STANDARD_PASSWORD)
+        expect(login_page.page).to_have_url(f"{BASE_URL_NO_SLASH}/inventory.html")
+
+        # Logout
+        inventory_page = InventoryPage(login_page.page)
+        inventory_page.logout()
+        expect(login_page.page).to_have_url(f"{BASE_URL_NO_SLASH}/")
+
+        # Attempt to access inventory again
+        login_page.page.goto(f"{BASE_URL_NO_SLASH}/inventory.html")
+        expect(login_page.page).to_have_url(f"{BASE_URL_NO_SLASH}/")

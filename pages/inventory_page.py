@@ -1,7 +1,7 @@
 """
 Page Object Model for SauceDemo Inventory/Products Page.
 """
-from playwright.sync_api import Page, Locator
+from playwright.sync_api import Page, Locator, expect
 
 
 class InventoryPage:
@@ -15,11 +15,14 @@ class InventoryPage:
             page: Playwright Page instance
         """
         self.page = page
-        self.cart_icon = page.locator('.shopping_cart_link')
-        self.sort_dropdown = page.locator('[data-test="product_sort_container"]')
-        self.product_items = page.locator('.inventory_item')
-        self.menu_button = page.locator('#react-burger-menu-btn')
-        self.logout_link = page.locator('#logout_sidebar_link')
+        self.cart_icon = page.locator(".shopping_cart_link")
+        self.sort_dropdown = page.locator(".product_sort_container")
+        self.product_items = page.locator(".inventory_item")
+        self.product_name_elements = page.locator(".inventory_item_name")
+        self.product_price_elements = page.locator(".inventory_item_price")
+        self.product_desc_elements = page.locator(".inventory_item_desc")
+        self.menu_button = page.locator("#react-burger-menu-btn")
+        self.logout_link = page.locator("#logout_sidebar_link")
     
     def is_loaded(self) -> bool:
         """
@@ -38,7 +41,7 @@ class InventoryPage:
             item_name: Name of the product to add
         """
         # Find the product item container
-        item = self.page.locator('.inventory_item').filter(has_text=item_name)
+        item = self.page.locator(".inventory_item").filter(has_text=item_name)
         # Click the "Add to cart" button for this item
         add_button = item.locator('button').filter(has_text='Add to cart')
         add_button.click()
@@ -50,8 +53,8 @@ class InventoryPage:
         Args:
             item_name: Name of the product to remove
         """
-        item = self.page.locator('.inventory_item').filter(has_text=item_name)
-        remove_button = item.locator('button').filter(has_text='Remove')
+        item = self.page.locator(".inventory_item").filter(has_text=item_name)
+        remove_button = item.locator("button").filter(has_text="Remove")
         remove_button.click()
     
     def get_cart_count(self) -> int:
@@ -61,7 +64,7 @@ class InventoryPage:
         Returns:
             Number of items in cart, 0 if badge is not visible
         """
-        cart_badge = self.page.locator('.shopping_cart_badge')
+        cart_badge = self.page.locator(".shopping_cart_badge")
         if cart_badge.count() == 0:
             return 0
         if cart_badge.is_visible(timeout=0):
@@ -75,6 +78,8 @@ class InventoryPage:
         Args:
             option: Sort option value (e.g., 'az', 'za', 'lohi', 'hilo')
         """
+        expect(self.product_items.first).to_be_visible()
+        self.sort_dropdown.wait_for(state="attached")
         self.sort_dropdown.select_option(option)
     
     def open_cart(self) -> None:
@@ -88,8 +93,54 @@ class InventoryPage:
         Returns:
             List of product names
         """
-        product_name_elements = self.page.locator('.inventory_item_name')
-        return [name.inner_text() for name in product_name_elements.all()]
+        return [name.inner_text() for name in self.product_name_elements.all()]
+
+    def get_products(self) -> list[dict]:
+        """
+        Get all products displayed in the inventory with their basic information.
+
+        Returns:
+            List of dictionaries containing product name, description and price.
+        """
+        products: list[dict] = []
+        for item in self.product_items.all():
+            name = item.locator(".inventory_item_name").inner_text()
+            description = item.locator(".inventory_item_desc").inner_text()
+            price = item.locator(".inventory_item_price").inner_text()
+            products.append(
+                {
+                    "name": name,
+                    "description": description,
+                    "price": price,
+                }
+            )
+        return products
+
+    def get_product_prices(self) -> list[float]:
+        """
+        Get the list of product prices as floats.
+
+        Returns:
+            List of product prices.
+        """
+        prices: list[float] = []
+        for price_el in self.product_price_elements.all():
+            text = price_el.inner_text().strip().replace("$", "")
+            try:
+                prices.append(float(text))
+            except ValueError:
+                continue
+        return prices
+
+    def open_product_details(self, item_name: str) -> None:
+        """
+        Open the product details page for a given item.
+
+        Args:
+            item_name: Name of the product whose details page should be opened.
+        """
+        item = self.page.locator(".inventory_item").filter(has_text=item_name)
+        item.locator(".inventory_item_name").click()
     
     def logout(self) -> None:
         """Logout from the application."""
