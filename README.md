@@ -14,16 +14,6 @@ This project implements automated regression tests for [SauceDemo](https://www.s
 - **Reporting**: pytest-html
 - **CI/CD**: GitHub Actions
 
-### Why Playwright?
-
-Playwright was chosen for this project because:
-- **Modern & Reliable**: Built-in auto-waiting eliminates flaky tests
-- **Fast Execution**: Parallel test execution support
-- **Cross-browser**: Supports Chromium, Firefox, and WebKit
-- **Excellent API**: Intuitive Python API with great documentation
-- **Network Control**: Built-in request interception and mocking capabilities
-- **Debugging**: Rich debugging tools (trace viewer, screenshots, videos)
-
 ## Project Structure
 
 ```
@@ -142,6 +132,20 @@ pytest --headed
 
 Screenshots are automatically captured on test failures and saved in `test-results/` directory.
 
+### Cross-browser runs
+
+Run the full suite on all supported browsers (Chromium, Firefox, WebKit). Each test runs once per browser:
+
+```bash
+pytest --browser chromium --browser firefox --browser webkit
+```
+
+Run on a single browser only (e.g. for faster local feedback):
+
+```bash
+pytest --browser firefox
+```
+
 ## Test Coverage
 
 ### Authentication Tests (`test_login.py`)
@@ -162,9 +166,14 @@ Screenshots are automatically captured on test failures and saved in `test-resul
 - ✅ Remove item from inventory page
 - ✅ Remove item from cart page
 - ✅ Cart persistence across navigation
+- ✅ Cart persists after cart page refresh
+- ✅ Cart badge preserved after inventory refresh
 - ✅ Cart badge count updates
 - ✅ Cart items display correctly
+- ✅ Inventory loads with all products
+- ✅ Inventory sorting by name and price
 - ✅ Proceed to checkout from cart
+- ✅ Inventory access in a new tab after login
 
 ### Checkout Tests (`test_checkout.py`)
 
@@ -175,6 +184,10 @@ Screenshots are automatically captured on test failures and saved in `test-resul
 - ✅ Cancel checkout functionality
 - ✅ Logout after checkout
 - ✅ Checkout with multiple items
+- ✅ Error message clears after fixing checkout info
+- ✅ Back/forward navigation during checkout
+- ✅ Overview items match cart items
+- ✅ Totals and tax calculation on overview
 
 ## Page Object Model (POM)
 
@@ -204,15 +217,15 @@ Configuration is managed through:
 After test execution, HTML reports are generated in the `reports/` directory:
 - `reports/report.html`: Comprehensive test report with results
 
-Screenshots and videos are saved in `test-results/` directory on failures.
+Screenshots are saved in `test-results/` directory on failures.
 
 ## CI/CD Integration
 
 The project includes a GitHub Actions workflow (`.github/workflows/tests.yml`) that:
 - Runs tests on push/PR to main/master/develop branches
-- Installs dependencies and Playwright browsers
-- Generates test reports
-- Uploads test results as artifacts
+- Uses a **cross-browser matrix**: the suite runs on Chromium, Firefox, and WebKit (one job per browser)
+- Installs only the browser for each matrix job and runs `pytest --browser <browser>`
+- Generates test reports and uploads artifacts **per browser**: `test-results-chromium`, `test-results-firefox`, `test-results-webkit` (each contains `reports/` and `test-results/`)
 
 ## Best Practices Implemented
 
@@ -263,49 +276,10 @@ Navigation-related scenarios covered by the suite include:
   - Refreshing the cart page.
   - Refreshing the inventory page (cart badge count preserved).
 - Checkout back/forward behavior:
-  - From checkout step two, using browser Back returns to step one with data still filled.
+  - From checkout step two, using browser Back returns to step one with data cleared.
   - Using browser Forward returns to step two with overview still loaded.
 - Logged-in users can open `inventory.html` in a **new tab** and remain authenticated.
 
-## Debugging Failures
-
-Useful commands during local debugging:
-
-- Run tests in headed mode:
-  ```bash
-  pytest --headed
-  ```
-- Slow down interactions for visual inspection:
-  ```bash
-  pytest --headed --slowmo 200
-  ```
-- Run a specific test with verbose output:
-  ```bash
-  pytest -v tests/test_checkout.py::TestCheckout::test_complete_checkout_flow
-  ```
-
-Artifacts:
-
-- **Screenshots / videos**: Saved under `test-results/` when tests fail (configured via pytest/Playwright options).
-- **HTML report**: Generated as `reports/report.html` after pytest runs.
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Browser not found**:
-   ```bash
-   playwright install
-   ```
-
-2. **Import errors**:
-   - Ensure virtual environment is activated
-   - Verify all dependencies are installed: `pip install -r requirements.txt`
-
-3. **Tests timing out**:
-   - Check network connectivity
-   - Verify SauceDemo website is accessible
-   - Increase timeout values in `utils/config.py` if needed
 
 ## Future Enhancements
 
